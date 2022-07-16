@@ -1,0 +1,13 @@
+{
+  "mongoUrl": "",
+  "auth": {
+    "user": "",
+    "password": "",
+    "captchaCode": ""
+  },
+  "botUserId": 3484792,
+  "whitelistedCreators": [
+    557798
+  ],
+  "blacklistedParticipants": []
+}
