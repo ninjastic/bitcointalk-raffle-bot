@@ -27,6 +27,23 @@ export const settings: ISettings = JSON.parse(
 
 export const api = axios.create();
 
+const MAX_REQUESTS_COUNT = 1;
+const INTERVAL_MS = 1000 * 1;
+let PENDING_REQUESTS = 0;
+
+api.interceptors.request.use((config) => {
+  return new Promise((resolve) => {
+    const interval = setInterval(() => {
+      if (PENDING_REQUESTS < MAX_REQUESTS_COUNT) {
+        PENDING_REQUESTS += 1;
+
+        clearInterval(interval);
+        resolve(config);
+      }
+    }, INTERVAL_MS);
+  });
+});
+
 export const encodeStr = (rawStr: string) =>
   rawStr.replace(/[\u00A0-\u9999<>\&]/g, function (i) {
     return "&#" + i.charCodeAt(0) + ";";
@@ -44,7 +61,7 @@ let lastPostId: number = 0;
 
 export const getPosts = async () => {
   log(`Getting posts from ${lastPostId}`);
-  const response = await api.get("http://api.ninjastic.space/posts", {
+  const response = await axios.get("http://api.ninjastic.space/posts", {
     params: {
       after_date: dayjs().subtract(1, "d").toISOString(),
       after: lastPostId,
