@@ -44,6 +44,17 @@ api.interceptors.request.use((config) => {
   });
 });
 
+api.interceptors.response.use(
+  (response) => {
+    PENDING_REQUESTS = Math.max(0, PENDING_REQUESTS - 1);
+    return Promise.resolve(response);
+  },
+  (error) => {
+    PENDING_REQUESTS = Math.max(0, PENDING_REQUESTS - 1);
+    return Promise.reject(error);
+  }
+);
+
 export const encodeStr = (rawStr: string) =>
   rawStr.replace(/[\u00A0-\u9999<>\&]/g, function (i) {
     return "&#" + i.charCodeAt(0) + ";";
@@ -237,6 +248,7 @@ interface ITopicData {
 }
 
 export const getTopicData = async (topicId: number) => {
+  log("Getting topic data", topicId);
   const response = await api.get(
     `https://bitcointalk.org/index.php?topic=${topicId}`
   );

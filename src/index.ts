@@ -70,9 +70,9 @@ const commands = [
   },
   {
     name: "Inserts a game entry",
-    regex: /\+entrada .*bitcointalk\.org\/index\.php\?topic=(\d+)/gi,
+    regex: /\+entrada .*?bitcointalk\.org\/index\.php\?topic=(\d+)/gi,
     function: async (regexMatches: RegExpMatchArray, post: IPost) => {
-      log(`Found new entry request`, post.topic_id, post.author);
+      log(`Found new entry request`, post.post_id, post.author);
       const game = await Game.findOne({ topic_id: post.topic_id });
 
       if (!game) {
@@ -198,7 +198,7 @@ async function main() {
   if (!api.defaults.headers.common.Cookie) {
     await authenticateForum();
     await checkForMatches();
-    
+
     setInterval(async () => {
       try {
         await checkForMatches();
