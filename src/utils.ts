@@ -65,6 +65,7 @@ export const getPosts = async () => {
     params: {
       after_date: dayjs().subtract(1, "d").toISOString(),
       after: lastPostId,
+      limit: 200,
     },
   });
 
