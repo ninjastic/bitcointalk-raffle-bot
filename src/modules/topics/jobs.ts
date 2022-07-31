@@ -62,7 +62,6 @@ const jobs = {
         [table]
         ${entries.length ? entryTableHeadText : ''}
         ${entries.length ? entryRowText : '[tr][td]...[/td][/tr]'}
-        ${entries.length ? `\nTotal de Tickets: ${entries.length}` : ''}
         [/table]
       `;
 
