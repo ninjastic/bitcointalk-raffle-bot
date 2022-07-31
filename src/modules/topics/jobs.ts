@@ -119,6 +119,7 @@ const jobs = {
     }
 
     const blockHash = await getBlockHash(game.block_height);
+    const entries = await Entry.find({ game_id: game.game_id });
 
     const ticketsDrawn = Array(game.number_winners)
       .fill(null)
@@ -126,10 +127,9 @@ const jobs = {
         const concat = `${game.seed}${blockHash}${nonce}`;
         const hash = cryptojs.SHA256(concat).toString(cryptojs.enc.Hex);
         const ticket = parseInt(hash.slice(0, 10), 16);
-        return (ticket % game.number_winners) + 1;
+        return (ticket % entries.length) + 1;
       });
 
-    const entries = await Entry.find({ game_id: game.game_id });
     const winners: IEntry[] = ticketsDrawn.map(
       (ticket: any) => entries[ticket - 1],
     );
