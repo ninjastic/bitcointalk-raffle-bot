@@ -1,5 +1,5 @@
 import { stripIndents } from 'common-tags';
-import sha256 from 'crypto-js/sha256';
+import cryptojs from 'crypto-js';
 import { Game } from '../../models/Game';
 import { Entry, IEntry } from '../../models/Entry';
 import { createPost, getBlockHash, getCurrentBlock } from '../../utils';
@@ -124,7 +124,7 @@ const jobs = {
       .fill(null)
       .map((_, nonce) => {
         const concat = `${game.seed}${blockHash}${nonce}`;
-        const hash = sha256(concat).toString();
+        const hash = cryptojs.SHA256(concat).toString(cryptojs.enc.Hex);
         const ticket = parseInt(hash.slice(0, 10), 16);
         return (ticket % game.number_winners) + 1;
       });
