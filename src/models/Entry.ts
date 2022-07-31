@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, model } from 'mongoose';
 
 export interface IEntry {
   entry_id: number;
@@ -19,8 +19,8 @@ const entrySchema = new Schema<IEntry>(
     author_uid: { type: Number, required: true },
   },
   {
-    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
-  }
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+  },
 );
 
-export const Entry = model("Entry", entrySchema);
+export const Entry = model('Entry', entrySchema);

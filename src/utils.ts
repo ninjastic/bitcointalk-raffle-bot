@@ -1,13 +1,13 @@
-import axios from "axios";
-import fetch from "node-fetch";
-import FormData from "form-data";
-import { load } from "cheerio";
-import crypto from "crypto-js";
-import fs from "fs";
-import path from "path";
+import axios from 'axios';
+import fetch from 'node-fetch';
+import FormData from 'form-data';
+import { load } from 'cheerio';
+import crypto from 'crypto-js';
+import fs from 'fs';
+import path from 'path';
 
-import dayjs from "./services/dayjs";
-import log from "./logger";
+import dayjs from './services/dayjs';
+import log from './logger';
 
 interface ISettings {
   mongoUrl: string;
@@ -22,7 +22,7 @@ interface ISettings {
 }
 
 export const settings: ISettings = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "..", "settings.json"), "utf-8")
+  fs.readFileSync(path.join(__dirname, '..', 'settings.json'), 'utf-8'),
 );
 
 export const api = axios.create();
@@ -31,18 +31,19 @@ const MAX_REQUESTS_COUNT = 1;
 const INTERVAL_MS = 1000 * 1;
 let PENDING_REQUESTS = 0;
 
-api.interceptors.request.use((config) => {
-  return new Promise((resolve) => {
-    const interval = setInterval(() => {
-      if (PENDING_REQUESTS < MAX_REQUESTS_COUNT) {
-        PENDING_REQUESTS += 1;
+api.interceptors.request.use(
+  (config) =>
+    new Promise((resolve) => {
+      const interval = setInterval(() => {
+        if (PENDING_REQUESTS < MAX_REQUESTS_COUNT) {
+          PENDING_REQUESTS += 1;
 
-        clearInterval(interval);
-        resolve(config);
-      }
-    }, INTERVAL_MS);
-  });
-});
+          clearInterval(interval);
+          resolve(config);
+        }
+      }, INTERVAL_MS);
+    }),
+);
 
 api.interceptors.response.use(
   (response) => {
@@ -51,14 +52,12 @@ api.interceptors.response.use(
   },
   (error) => {
     PENDING_REQUESTS = Math.max(0, PENDING_REQUESTS - 1);
-    return Promise.reject(error);
-  }
+    throw new Error(error);
+  },
 );
 
 export const encodeStr = (rawStr: string) =>
-  rawStr.replace(/[\u00A0-\u9999<>\&]/g, function (i) {
-    return "&#" + i.charCodeAt(0) + ";";
-  });
+  rawStr.replace(/[\u00A0-\u9999<>&]/g, (i) => `&#${i.charCodeAt(0)};`);
 
 export interface IPost {
   post_id: number;
@@ -72,15 +71,15 @@ let lastPostId: number = 0;
 
 export const getPosts = async () => {
   log(`Getting posts from ${lastPostId}`);
-  const response = await axios.get("http://api.ninjastic.space/posts", {
+  const response = await axios.get('http://api.ninjastic.space/posts', {
     params: {
-      after_date: dayjs().subtract(1, "d").toISOString(),
+      after_date: dayjs().subtract(1, 'd').toISOString(),
       after: lastPostId,
       limit: 200,
     },
   });
 
-  const posts: IPost[] = response.data.data.posts;
+  const { posts } = response.data.data;
   lastPostId = posts[0]?.post_id || lastPostId;
 
   return posts;
@@ -89,40 +88,40 @@ export const getPosts = async () => {
 export const authenticateForum = async () => {
   const bodyFormData = new FormData();
 
-  bodyFormData.append("user", settings.auth.user);
-  bodyFormData.append("passwrd", settings.auth.password);
-  bodyFormData.append("cookieneverexp", "on");
-  bodyFormData.append("hash_passwrd", "");
+  bodyFormData.append('user', settings.auth.user);
+  bodyFormData.append('passwrd', settings.auth.password);
+  bodyFormData.append('cookieneverexp', 'on');
+  bodyFormData.append('hash_passwrd', '');
 
   const response = await fetch(
     `https://bitcointalk.org/index.php?action=login2;ccode=${settings.auth.captchaCode}`,
-    { method: "POST", body: bodyFormData, redirect: "manual" }
+    { method: 'POST', body: bodyFormData, redirect: 'manual' },
   );
 
-  const cookies = response.headers.raw()["set-cookie"];
+  const cookies = response.headers.raw()['set-cookie'];
 
   if (cookies && cookies[0]) {
     api.defaults.headers.common.Cookie = `${cookies[0]}; ${cookies[1]}`;
 
-    return Promise.resolve("Authentication successed");
+    return Promise.resolve('Authentication successed');
   }
 
-  return Promise.reject("Authentication failed");
+  throw new Error('Authentication failed');
 };
 
 const getSesc = async () => {
   if (!api.defaults.headers.common.Cookie) {
-    return Promise.reject("Missing cookies");
+    throw new Error('Missing cookies');
   }
 
   const response = await api.get(
-    "https://bitcointalk.org/index.php?action=profile"
+    'https://bitcointalk.org/index.php?action=profile',
   );
   const $ = load(response.data);
 
   const logoutUrl = $(
-    'td.maintab_back a[href*="index.php?action=logout;sesc="]'
-  ).attr("href");
+    'td.maintab_back a[href*="index.php?action=logout;sesc="]',
+  ).attr('href');
 
   const sescRegex = /sesc=(.*)/;
   const sesc = logoutUrl?.match(sescRegex);
@@ -148,14 +147,14 @@ export const createPost = async ({
   message,
 }: ICreatePostData) => {
   if (!api.defaults.headers.common.Cookie) {
-    return Promise.reject("Missing cookies");
+    throw new Error('Missing cookies');
   }
 
   const code = await getSesc();
 
   const data = {
     topic,
-    icon: "xx",
+    icon: 'xx',
     subject,
     message: encodeStr(message),
     sc: code,
@@ -163,23 +162,23 @@ export const createPost = async ({
 
   const bodyFormData = new FormData();
   Object.entries(data).forEach(([key, entry]) =>
-    bodyFormData.append(key, entry)
+    bodyFormData.append(key, entry),
   );
 
-  log("Creating post");
+  log('Creating post');
 
   const postResponse = await api.post(
     `https://bitcointalk.org/index.php?action=post2${
-      board ? `;board=${board}` : ""
+      board ? `;board=${board}` : ''
     }`,
-    bodyFormData
+    bodyFormData,
   );
 
   const $ = load(postResponse.data);
 
-  const idMatch = $("div[id^=subject_]")
+  const idMatch = $('div[id^=subject_]')
     .last()
-    .attr("id")
+    .attr('id')
     ?.match(/subject_(\d+)/);
 
   if (idMatch && idMatch[1]) {
@@ -204,14 +203,14 @@ export const editPost = async ({
   message,
 }: IEditPostData) => {
   if (!api.defaults.headers.common.Cookie) {
-    return Promise.reject("Missing cookies");
+    throw new Error('Missing cookies');
   }
 
   const code = await getSesc();
 
   const data = {
     topic,
-    icon: "xx",
+    icon: 'xx',
     subject,
     message: encodeStr(message),
     goback: 1,
@@ -220,14 +219,14 @@ export const editPost = async ({
 
   const bodyFormData = new FormData();
   Object.entries(data).forEach(([key, entry]) =>
-    bodyFormData.append(key, entry)
+    bodyFormData.append(key, entry),
   );
 
   log(`Editing post ${post}`);
 
   const postResponse = await api.post(
     `https://bitcointalk.org/index.php?action=post2;msg=${post}`,
-    bodyFormData
+    bodyFormData,
   );
 
   const postIdMatchRegex = /#msg(\d+)/;
@@ -248,51 +247,51 @@ interface ITopicData {
 }
 
 export const getTopicData = async (topicId: number) => {
-  log("Getting topic data", topicId);
+  log('Getting topic data', topicId);
   const response = await api.get(
-    `https://bitcointalk.org/index.php?topic=${topicId}`
+    `https://bitcointalk.org/index.php?topic=${topicId}`,
   );
 
   if (!response.data) {
-    return Promise.reject("getTopicData request failed");
+    throw new Error('getTopicData request failed');
   }
 
-  let topicData: ITopicData = {
+  const topicData: ITopicData = {
     author_uid: null,
     date: null,
   };
 
   const $ = load(response.data);
   const post = $(
-    "#quickModForm > table.bordercolor > tbody > tr > td > table > tbody > tr > td > table"
+    '#quickModForm > table.bordercolor > tbody > tr > td > table > tbody > tr > td > table',
   ).first();
 
   if (!post) {
-    return Promise.reject("Topic is invalid");
+    throw new Error('Topic is invalid');
   }
 
-  const authorAnchor = post.find("td.poster_info > b > a");
-  const authorHref = authorAnchor.attr("href");
+  const authorAnchor = post.find('td.poster_info > b > a');
+  const authorHref = authorAnchor.attr('href');
 
   const authorRegex = /;u=(\d+)/;
   const authorMatch = authorHref?.match(authorRegex);
 
   if (authorMatch) {
-    const [_, authorUid] = authorMatch;
+    const [, authorUid] = authorMatch;
     topicData.author_uid = Number(authorUid);
   }
 
   const topicDateDiv = post
-    .find("td.td_headerandpost table div:nth-child(2)")
+    .find('td.td_headerandpost table div:nth-child(2)')
     .first();
-  topicDateDiv.children("span[class=editplain]").remove();
+  topicDateDiv.children('span[class=editplain]').remove();
 
   const topicDateText = topicDateDiv
     .text()
-    .replace("Today at", dayjs.utc().format("YYYY/MM/DD"));
+    .replace('Today at', dayjs.utc().format('YYYY/MM/DD'));
 
   const tzOffset = dayjs().utcOffset();
-  const topicDate = dayjs.utc(topicDateText).add(tzOffset, "m").toDate();
+  const topicDate = dayjs.utc(topicDateText).add(tzOffset, 'm').toDate();
 
   if (topicDate) {
     topicData.date = topicDate;
@@ -301,20 +300,19 @@ export const getTopicData = async (topicId: number) => {
   return topicData;
 };
 
-export const generateGameSeed = () => {
-  return crypto.SHA256(dayjs().unix().toString()).toString();
-};
+export const generateGameSeed = () =>
+  crypto.SHA256(dayjs().unix().toString()).toString();
 
 export const getCurrentBlock = async () => {
   const response = await axios.get<number>(
-    "https://mempool.space/api/blocks/tip/height"
+    'https://mempool.space/api/blocks/tip/height',
   );
   return response.data;
 };
 
 export const getBlockHash = async (height: number) => {
   const response = await axios.get<number>(
-    `https://mempool.space/api/block-height/${height}`
+    `https://mempool.space/api/block-height/${height}`,
   );
   return response.data;
 };

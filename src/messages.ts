@@ -1,29 +1,9 @@
-import { stripIndent, stripIndents } from "common-tags";
+import { stripIndent, stripIndents } from 'common-tags';
 
-import dayjs from "./services/dayjs";
-import { editPost } from "./utils";
-import { Game, IGame } from "./models/Game";
-import { Entry, IEntry } from "./models/Entry";
-
-export const refreshPostContent = async (gameId: number) => {
-  const game = await Game.findOne({ game_id: gameId });
-
-  if (!game) {
-    throw new Error("Game not found");
-  }
-
-  const newMessage = await generateContent(game);
-
-  await editPost({
-    post: game.post_id,
-    topic: game.topic_id,
-    subject: `[Aberto] Sorteio #${game.game_id}`,
-    message: newMessage,
-  });
-
-  game.post_content = newMessage;
-  await game.updateOne();
-};
+import dayjs from './services/dayjs';
+import { editPost } from './utils';
+import { Game, IGame } from './models/Game';
+import { Entry, IEntry } from './models/Entry';
 
 export const generateContent = async (game: IGame) => {
   const { deadline, number_winners, topic_id, post_id, seed } = game;
@@ -32,7 +12,7 @@ export const generateContent = async (game: IGame) => {
 
   const entryGroups = entries.reduce((groups, entry) => {
     const authorGroupIndex = groups.findIndex(
-      (group) => group.author === entry.author
+      (group) => group.author === entry.author,
     );
     if (authorGroupIndex !== -1) {
       groups[authorGroupIndex].entries.push(entry);
@@ -68,18 +48,19 @@ export const generateContent = async (game: IGame) => {
         group.author
       }[/b][/td][td]${topicsNumber}[/td][td]${group.entries
         .map(entryRowTopicText)
-        .join(", ")}[/td][/tr]`;
+        .join(', ')}[/td][/tr]`;
     })
     .reduce(
       (text, row, i, array) =>
-        text + row + (i === array.length - 1 ? "" : "\n"),
-      ""
+        text + row + (i === array.length - 1 ? '' : '\n'),
+      '',
     );
 
   const entriesTableText = stripIndents`
       [table]
-      ${entries.length ? entryTableHeadText : ""}
-      ${entries.length ? entryRowText : `[tr][td]...[/td][/tr]`}
+      ${entries.length ? entryTableHeadText : ''}
+      ${entries.length ? entryRowText : '[tr][td]...[/td][/tr]'}
+      ${entries.length ? `\nTotal de Tickets: ${entries.length}` : ''}
       [/table]
     `;
 
@@ -88,8 +69,8 @@ export const generateContent = async (game: IGame) => {
   
       [list]
       [li]Data final: ${dayjs
-        .tz(deadline, "UTC")
-        .format("DD/MM/YYYY HH:mm:ss z")}[/li]
+        .tz(deadline, 'UTC')
+        .format('DD/MM/YYYY HH:mm:ss z')}[/li]
       [li]Total de Ganhadores: ${number_winners}[/li]
       [/list]
   
@@ -97,7 +78,7 @@ export const generateContent = async (game: IGame) => {
   
       [b]Como participar:[/b]
   
-        -> Poste o link completo de cada tópico junto à +entrada, um por linha, em um novo post
+        -> Poste o link completo de cada tópico junto à +entrada, um por linha, em um novo post
         -> Exemplo:
       
       [quote author=satoshi link=topic=${topic_id}.msg${post_id}#msg${post_id} date=${dayjs().unix()}]
@@ -117,4 +98,24 @@ export const generateContent = async (game: IGame) => {
   
       ${entriesTableText}
     `;
+};
+
+export const refreshPostContent = async (gameId: number) => {
+  const game = await Game.findOne({ game_id: gameId });
+
+  if (!game) {
+    throw new Error('Game not found');
+  }
+
+  const newMessage = await generateContent(game);
+
+  await editPost({
+    post: game.post_id,
+    topic: game.topic_id,
+    subject: `[Aberto] Sorteio #${game.game_id}`,
+    message: newMessage,
+  });
+
+  game.post_content = newMessage;
+  await game.updateOne();
 };
