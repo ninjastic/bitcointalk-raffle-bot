@@ -126,18 +126,31 @@ const jobs = {
     const blockHash = await getBlockHash(game.block_height);
     const entries = await Entry.find({ game_id: game.game_id });
 
-    const ticketsDrawn = Array(game.number_winners)
-      .fill(null)
-      .map((_, nonce) => {
-        const concat = `${game.seed}${blockHash}${nonce}`;
-        const hash = cryptojs.SHA256(concat).toString(cryptojs.enc.Hex);
-        const ticket = parseInt(hash.slice(0, 10), 16);
-        return (ticket % entries.length) + 1;
-      });
+    const generateTicket = (nonce: number) => {
+      const concat = `${game.seed}${blockHash}${nonce}`;
+      const hash = cryptojs.SHA256(concat).toString(cryptojs.enc.Hex);
+      const decimal = parseInt(hash.slice(0, 10), 16);
+      return (decimal % entries.length) + 1;
+    };
 
-    const winners: IEntry[] = ticketsDrawn.map(
-      (ticket: any) => entries[ticket - 1],
-    );
+    const ticketsDrawn = Array(entries.length)
+      .fill(Math.random())
+      .map((_, nonce) => generateTicket(nonce));
+
+    const winners = ticketsDrawn
+      .map((ticket: any) => entries[ticket - 1])
+      .reduce((actualWinners, w) => {
+        if (actualWinners.length === game.number_winners) {
+          return actualWinners;
+        }
+        const winnerExists = actualWinners.find(
+          (actualWinner) => actualWinner.author_uid === w.author_uid,
+        );
+        if (!winnerExists) {
+          return [...actualWinners, w];
+        }
+        return actualWinners;
+      }, [] as IEntry[]);
 
     const message = stripIndents`
       E rufem os tambores...
