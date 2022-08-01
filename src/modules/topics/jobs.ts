@@ -133,24 +133,43 @@ const jobs = {
       return (decimal % entries.length) + 1;
     };
 
+    const entryGroups = entries.reduce((groups, entry) => {
+      const authorGroupIndex = groups.findIndex(
+        (group) => group.author === entry.author,
+      );
+      if (authorGroupIndex !== -1) {
+        groups[authorGroupIndex].entries.push(entry);
+      } else {
+        groups.push({ author: entry.author, entries: [entry] });
+      }
+      return groups;
+    }, [] as Array<{ author: string; entries: IEntry[] }>);
+
     const ticketsDrawn = Array(entries.length)
       .fill(Math.random())
       .map((_, nonce) => generateTicket(nonce));
 
-    const winners = ticketsDrawn
-      .map((ticket: any) => entries[ticket - 1])
-      .reduce((actualWinners, w) => {
-        if (actualWinners.length === game.number_winners) {
-          return actualWinners;
+    const winnersList = ticketsDrawn.map((ticketNumber) => {
+      let lastNumber = 0;
+      const { author } = entryGroups.find((entryGroup) => {
+        lastNumber += entryGroup.entries.length;
+        if (lastNumber >= ticketNumber) {
+          return true;
         }
-        const winnerExists = actualWinners.find(
-          (actualWinner) => actualWinner.author_uid === w.author_uid,
-        );
-        if (!winnerExists) {
-          return [...actualWinners, w];
+        return false;
+      }) as { author: string; entries: IEntry[] };
+
+      return { author, ticket: ticketNumber };
+    }) as Array<{ author: string; ticket: number }>;
+
+    const winners = winnersList
+      .reduce((_winners, winner) => {
+        if (_winners.find((_winner) => _winner.author === winner.author)) {
+          return _winners;
         }
-        return actualWinners;
-      }, [] as IEntry[]);
+        return [..._winners, { author: winner.author, ticket: winner.ticket }];
+      }, [] as Array<{ author: string; ticket: number }>)
+      .slice(0, game.number_winners);
 
     const message = stripIndents`
       E rufem os tambores...
@@ -164,14 +183,19 @@ const jobs = {
 
       [hr]
 
-      [b]${winners.length > 1 ? 'Vencedores' : 'Vencedor'}[/b]
+      [b]Tickets Sorteados:[/b]
+      [code]${ticketsDrawn}[/code]
 
-      ${winners.map(
-        (winner, index, array) =>
-          `${ticketsDrawn[index]} - ${winner.author}${
-            index === array.length - 1 ? '' : '\n'
-          }`,
-      )}
+      [b]${winners.length > 1 ? 'Vencedores:' : 'Vencedor:'}[/b]
+
+      ${winners
+        .map(
+          (winner, index, array) =>
+            `${winner.ticket} - ${winner.author}${
+              index === array.length - 1 ? '' : '\n'
+            }`,
+        )
+        .join('')}
 
       [hr]
 
@@ -192,7 +216,7 @@ const jobs = {
 
     if (newPostId) {
       game.winner_post_id = newPostId;
-      game.winners_entry_id = winners.map((winner) => winner.entry_id);
+      game.tickets_drawn = ticketsDrawn;
       await game.save();
     }
   },

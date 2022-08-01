@@ -14,7 +14,7 @@ export interface IGame {
   block_height: number;
   overview_post_id: number;
   winner_post_id: number;
-  winners_entry_id: number[];
+  tickets_drawn: number[];
 }
 
 const gameSchema = new Schema<IGame>(
@@ -30,7 +30,7 @@ const gameSchema = new Schema<IGame>(
     block_height: { type: Number, required: false },
     overview_post_id: { type: Number, required: false },
     winner_post_id: { type: Number, required: false },
-    winners_entry_id: { type: [Number], required: false },
+    tickets_drawn: { type: [Number], required: false },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
