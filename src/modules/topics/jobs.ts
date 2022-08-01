@@ -3,6 +3,7 @@ import cryptojs from 'crypto-js';
 import { Game } from '../../models/Game';
 import { Entry, IEntry } from '../../models/Entry';
 import { createPost, getBlockHash, getCurrentBlock } from '../../utils';
+import log from '../../logger';
 
 const jobs = {
   raffleSecondStage: async (gameId: number) => {
@@ -14,6 +15,8 @@ const jobs = {
     if (game.overview_post_id) {
       throw new Error('Game already has overview post');
     }
+
+    log('secondStage raffle', gameId);
 
     const entries = await Entry.find({ game_id: game.game_id });
 
@@ -122,6 +125,8 @@ const jobs = {
     if (!game.block_height) {
       throw new Error('Game already has no block height');
     }
+
+    log('thirdStage raffle', gameId);
 
     const blockHash = await getBlockHash(game.block_height);
     const entries = await Entry.find({ game_id: game.game_id });
