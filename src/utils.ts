@@ -158,6 +158,7 @@ export const createPost = async ({
     subject,
     message: encodeStr(message),
     sc: code,
+    goback: 1,
   };
 
   const bodyFormData = new FormData();
@@ -176,16 +177,28 @@ export const createPost = async ({
 
   const $ = load(postResponse.data);
 
-  const idMatch = $('div[id^=subject_]')
-    .last()
+  const botUsername = $('#hellomember > b').text();
+
+  const postsByUser = $(
+    '#quickModForm > table.bordercolor > tbody > tr > td > table',
+  )
+    .toArray()
+    .filter((el) => {
+      const user = $(el).find('td.poster_info > b > a');
+      return user.text() === botUsername;
+    });
+
+  const postIdMatch = $(postsByUser[postsByUser.length - 1])
+    .find('div[id^=subject_]')
     .attr('id')
     ?.match(/subject_(\d+)/);
 
-  if (idMatch && idMatch[1]) {
-    log(`Created post ${idMatch[1]}`);
-    return Number(idMatch[1]);
+  if (postIdMatch && postIdMatch[1]) {
+    log(`Created post ${postIdMatch[1]}`);
+    return Number(postIdMatch[1]);
   }
 
+  log(`New post not identified, returned ${postIdMatch}`);
   return null;
 };
 

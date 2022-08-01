@@ -33,10 +33,8 @@ const jobs = {
         [tr]
         [td][b]Usuário[/b][/td]
         [td][b]Tickets[/b][/td]
-        [td][b]Tópicos[/b][/td]
         [/tr]
         [tr]
-        [td]________________[/td]
         [td]________________[/td]
         [td]________________[/td]
         [/tr]
@@ -46,11 +44,19 @@ const jobs = {
 
     const entryRowText = entryGroups
       .map((group) => {
-        const topicsNumber = group.entries.length;
-        lastTicketNumber += topicsNumber;
-        const ticketsRange = [lastTicketNumber + 1, lastTicketNumber];
+        const numberOfTickets = group.entries.length;
+        const ticketsRange = [
+          lastTicketNumber + 1,
+          lastTicketNumber + numberOfTickets,
+        ];
+        lastTicketNumber += numberOfTickets;
 
-        return `[tr][td][b]${group.author}[/b][/td][td]${topicsNumber}[/td][td]${ticketsRange[0]} ~ ${ticketsRange[1]}[/td][/tr]`;
+        const tickets =
+          numberOfTickets === 1
+            ? lastTicketNumber
+            : `${ticketsRange[0]} ~ ${ticketsRange[1]}`;
+
+        return `[tr][td][b]${group.author}[/b][/td][td]${tickets}[/td][/tr]`;
       })
       .reduce(
         (text, row, i, array) =>
