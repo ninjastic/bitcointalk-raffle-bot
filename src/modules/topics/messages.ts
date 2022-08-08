@@ -1,9 +1,9 @@
 import { stripIndent, stripIndents } from 'common-tags';
 
-import dayjs from './services/dayjs';
-import { editPost } from './utils';
-import { Game, IGame } from './models/Game';
-import { Entry, IEntry } from './models/Entry';
+import dayjs from '../../services/dayjs';
+import { editPost } from '../../utils';
+import { Game, IGame } from '../../models/Game';
+import { Entry, IEntry } from '../../models/Entry';
 
 export const generateContent = async (game: IGame) => {
   const { deadline, number_winners, topic_id, post_id, seed } = game;

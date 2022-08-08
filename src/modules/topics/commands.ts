@@ -1,6 +1,7 @@
+import { load } from 'cheerio';
 import dayjs from '../../services/dayjs';
 import log from '../../logger';
-import { generateContent, refreshPostContent } from '../../messages';
+import { generateContent, refreshPostContent } from './messages';
 import { Entry } from '../../models/Entry';
 import { Game } from '../../models/Game';
 import {
@@ -13,8 +14,8 @@ import {
 
 const commands = [
   {
-    name: 'Starts a game',
-    regex: /\+sorteio (\d{4}\/\d{2}\/\d{2}) \[(\d+)\]/i,
+    name: 'startGame',
+    regex: /\+sorteio/i,
     function: async (regexMatches: RegExpMatchArray, post: IPost) => {
       const hasWhiteList = settings.whitelistedCreators.length;
       const isAuthorWhitelisted = settings.whitelistedCreators.includes(
@@ -28,9 +29,19 @@ const commands = [
           return Promise.resolve('Game already exists');
         }
 
+        const $ = load(post.content);
+        const codeSettings = $('div.code').html();
+
+        const numberOfWinnersMatch = codeSettings?.match(/vencedores:\s+?(\d+)/i)?.at(1);
+        const deadlineMatch = codeSettings?.match(/deadline:\s+?(\d{4}\/\d{2}\/\d{2})/i)?.at(1);
+
+        if (!numberOfWinnersMatch || !deadlineMatch) {
+          throw new Error('Missing raffle parameters');
+        }
+
         const gameId = (await Game.count()) + 1;
-        const deadline = dayjs.tz(regexMatches[1], 'UTC').toISOString();
-        const numberOfWinners = Number(regexMatches[2]);
+        const deadline = dayjs.tz(deadlineMatch, 'UTC').toISOString();
+        const numberOfWinners = Number(numberOfWinnersMatch);
         const gameSeed = generateGameSeed();
 
         game = new Game({
@@ -66,7 +77,7 @@ const commands = [
     },
   },
   {
-    name: 'Inserts a game entry',
+    name: 'newGameEntry',
     regex: /\+entrada .*?bitcointalk\.org\/index\.php\?topic=(\d+)/gi,
     function: async (regexMatches: RegExpMatchArray, post: IPost) => {
       log('Found new entry request', post.post_id, post.author);
@@ -132,7 +143,7 @@ const commands = [
     },
   },
   {
-    name: 'Sets the number of winners',
+    name: 'changeNumberWinners',
     regex: /\+definir vencedores (\d+)/i,
     function: async (regexMatches: RegExpMatchArray, post: IPost) => {
       const game = await Game.findOne({ topic: post.topic_id });
@@ -155,7 +166,7 @@ const commands = [
     },
   },
   {
-    name: 'Sets the deadline',
+    name: 'changeDeadline',
     regex: /\+definir data (\d{4}\/\d{2}\/\d{2})/i,
     function: async (regexMatches: RegExpMatchArray, post: IPost) => {
       const game = await Game.findOne({ topic: post.topic_id });
