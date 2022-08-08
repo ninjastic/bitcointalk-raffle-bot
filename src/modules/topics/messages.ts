@@ -64,7 +64,7 @@ export const generateContent = async (game: IGame) => {
     `;
 
   return stripIndents`
-      [size=12pt][b]Sorteio #1[/b][/size]
+      [size=12pt][b]Sorteio #${game.game_id}[/b][/size]
   
       [list]
       [li]Data final: ${dayjs
