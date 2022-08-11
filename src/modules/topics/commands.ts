@@ -15,7 +15,7 @@ import {
 const commands = [
   {
     name: 'startGame',
-    regex: /\+sorteio/i,
+    regex: /\+\s?sorteio/i,
     function: async (regexMatches: RegExpMatchArray, post: IPost) => {
       const hasWhiteList = settings.whitelistedCreators.length;
       const isAuthorWhitelisted = settings.whitelistedCreators.includes(
@@ -78,7 +78,7 @@ const commands = [
   },
   {
     name: 'newGameEntry',
-    regex: /\+entrada .*?bitcointalk\.org\/index\.php\?topic=(\d+)/gi,
+    regex: /\+\s?entrada .*?bitcointalk\.org\/index\.php\?topic=(\d+)/gi,
     function: async (regexMatches: RegExpMatchArray, post: IPost) => {
       log('Found new entry request', post.post_id, post.author);
       const game = await Game.findOne({ topic_id: post.topic_id });
@@ -144,7 +144,7 @@ const commands = [
   },
   {
     name: 'changeNumberWinners',
-    regex: /\+definir vencedores (\d+)/i,
+    regex: /\+\s?definir vencedores (\d+)/i,
     function: async (regexMatches: RegExpMatchArray, post: IPost) => {
       const game = await Game.findOne({ topic: post.topic_id });
 
@@ -167,7 +167,7 @@ const commands = [
   },
   {
     name: 'changeDeadline',
-    regex: /\+definir data (\d{4}\/\d{2}\/\d{2})/i,
+    regex: /\+\s?definir data (\d{4}\/\d{2}\/\d{2})/i,
     function: async (regexMatches: RegExpMatchArray, post: IPost) => {
       const game = await Game.findOne({ topic: post.topic_id });
 
