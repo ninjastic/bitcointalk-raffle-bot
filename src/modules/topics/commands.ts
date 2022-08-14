@@ -32,8 +32,12 @@ const commands = [
         const $ = load(post.content);
         const codeSettings = $('div.code').html();
 
-        const numberOfWinnersMatch = codeSettings?.match(/vencedores:\s+?(\d+)/i)?.at(1);
-        const deadlineMatch = codeSettings?.match(/deadline:\s+?(\d{4}\/\d{2}\/\d{2})/i)?.at(1);
+        const numberOfWinnersMatch = codeSettings
+          ?.match(/vencedores:\s+?(\d+)/i)
+          ?.at(1);
+        const deadlineMatch = codeSettings
+          ?.match(/deadline:\s+?(\d{4}\/\d{2}\/\d{2})/i)
+          ?.at(1);
 
         if (!numberOfWinnersMatch || !deadlineMatch) {
           throw new Error('Missing raffle parameters');
@@ -146,7 +150,7 @@ const commands = [
     name: 'changeNumberWinners',
     regex: /\+\s?definir vencedores (\d+)/i,
     function: async (regexMatches: RegExpMatchArray, post: IPost) => {
-      const game = await Game.findOne({ topic: post.topic_id });
+      const game = await Game.findOne({ topic_id: post.topic_id });
 
       if (!game) {
         throw new Error('Game not found');
@@ -169,7 +173,7 @@ const commands = [
     name: 'changeDeadline',
     regex: /\+\s?definir data (\d{4}\/\d{2}\/\d{2})/i,
     function: async (regexMatches: RegExpMatchArray, post: IPost) => {
-      const game = await Game.findOne({ topic: post.topic_id });
+      const game = await Game.findOne({ topic_id: post.topic_id });
 
       if (!game) {
         throw new Error('Game not found');

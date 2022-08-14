@@ -116,5 +116,5 @@ export const refreshPostContent = async (gameId: number) => {
   });
 
   game.post_content = newMessage;
-  await game.updateOne();
+  await game.save();
 };
