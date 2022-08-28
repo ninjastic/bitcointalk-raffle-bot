@@ -104,7 +104,7 @@ const commands = [
       await Promise.allSettled(
         regexMatches.map(async (postEntry) => {
           const postEntryMatchRegex =
-            /\+entrada .*bitcointalk\.org\/index\.php\?topic=(\d+)/i;
+            /\+\s?entrada .*bitcointalk\.org\/index\.php\?topic=(\d+)/i;
           const postEntryMatch = postEntry.match(postEntryMatchRegex);
 
           if (postEntryMatch && game?.game_id) {
