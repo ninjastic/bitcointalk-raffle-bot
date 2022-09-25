@@ -254,12 +254,18 @@ export const editPost = async ({
   return null;
 };
 
-interface ITopicData {
+export interface ITopicData {
+  topic_id: number;
+  title: string | null;
   author_uid: number | null;
   date: Date | null;
+  merits: Array<{
+    user: string;
+    amount: number;
+  }>;
 }
 
-export const getTopicData = async (topicId: number) => {
+export const getTopicData = async (topicId: number): Promise<ITopicData> => {
   log('Getting topic data', topicId);
   const response = await api.get(
     `https://bitcointalk.org/index.php?topic=${topicId}`,
@@ -270,8 +276,11 @@ export const getTopicData = async (topicId: number) => {
   }
 
   const topicData: ITopicData = {
+    topic_id: topicId,
+    title: null,
     author_uid: null,
     date: null,
+    merits: [],
   };
 
   const $ = load(response.data);
@@ -282,6 +291,9 @@ export const getTopicData = async (topicId: number) => {
   if (!post) {
     throw new Error('Topic is invalid');
   }
+
+  const title = post.find('div[id*=subject_] a').text();
+  topicData.title = title;
 
   const authorAnchor = post.find('td.poster_info > b > a');
   const authorHref = authorAnchor.attr('href');
@@ -308,6 +320,24 @@ export const getTopicData = async (topicId: number) => {
 
   if (topicDate) {
     topicData.date = topicDate;
+  }
+
+  const meritsDiv = post.find(
+    'td.td_headerandpost > table > tbody > tr > td:nth-child(2) > div:nth-child(3)',
+  );
+
+  if (meritsDiv) {
+    const merits = meritsDiv
+      .html()
+      ?.match(/\w+<\/a> \(\d+\)/g)
+      ?.map((a) => {
+        const [, user, amount] = a.match(
+          /(.*)<\/a> \((\d+)\)/,
+        ) as RegExpMatchArray;
+        return { user, amount: Number(amount) };
+      });
+
+    topicData.merits = merits ?? [];
   }
 
   return topicData;

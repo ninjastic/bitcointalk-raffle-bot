@@ -2,8 +2,15 @@ import { stripIndents } from 'common-tags';
 import cryptojs from 'crypto-js';
 import { Game } from '../../models/Game';
 import { Entry, IEntry } from '../../models/Entry';
-import { createPost, getBlockHash, getCurrentBlock } from '../../utils';
+import {
+  createPost,
+  getBlockHash,
+  getCurrentBlock,
+  getTopicData,
+  ITopicData,
+} from '../../utils';
 import log from '../../logger';
+import Queue from '../../services/queue';
 
 const jobs = {
   raffleSecondStage: async (gameId: number) => {
@@ -176,6 +183,61 @@ const jobs = {
       }, [] as Array<{ author: string; ticket: number }>)
       .slice(0, game.number_winners);
 
+    const queue = new Queue();
+
+    const promises = await Promise.allSettled(
+      entries.map((entry) =>
+        queue.add(async () => {
+          const data = await getTopicData(entry.topic_id);
+          return data;
+        }),
+      ),
+    );
+
+    const topics = promises
+      .filter((promise) => promise.status === 'fulfilled')
+      .map((promise: any) => promise.value) as ITopicData[];
+
+    const topMeritedTopic = topics.reduce((_topMeritedTopic, topic) => {
+      const topMeritedTopicSum = _topMeritedTopic.merits.reduce(
+        (accum, curr) => accum + curr.amount,
+        0,
+      );
+      const sumOfMerits = topic.merits.reduce(
+        (accum, curr) => accum + curr.amount,
+        0,
+      );
+      if (sumOfMerits > topMeritedTopicSum) {
+        return topic;
+      }
+      return _topMeritedTopic;
+    });
+
+    const topMeritedTopicEntry = entries.find(
+      (entry) => entry.topic_id === topMeritedTopic.author_uid,
+    );
+
+    // const topMeritedUser = topics
+    //   .reduce((users, topic) => {
+    //     if (!topic.author_uid) return users;
+    //     const sumOfMerits = topic.merits.reduce(
+    //       (accum, curr) => accum + curr.amount,
+    //       0,
+    //     );
+    //     const newUsers = [...users];
+    //     const userIndex = newUsers.findIndex(
+    //       (user) => user.author_uid === topic.author_uid,
+    //     );
+    //     if (userIndex === -1) {
+    //       newUsers.push({ author_uid: topic.author_uid, merits: sumOfMerits });
+    //     } else {
+    //       newUsers[userIndex].merits += sumOfMerits;
+    //     }
+    //     return newUsers;
+    //   }, [] as Array<{ author_uid: number; merits: number }>)
+    //   .sort((a, b) => (a.merits > b.merits ? -1 : 1))
+    //   ?.at(0);
+
     const message = stripIndents`
       E rufem os tambores...
 
@@ -211,6 +273,13 @@ const jobs = {
       4. O modulo da forma decimal anterior com o número de tickets totais (${
         entries.length
       }), somado à 1.[/pre]
+
+      [hr]
+
+      - Tópico com mais merits: [url=https://bitcointalk.org/index.php?topic=${
+        topMeritedTopic.topic_id
+      }.0]${topMeritedTopic.title}[/url] por ${topMeritedTopicEntry?.author}
+
     `;
 
     const newPostId = await createPost({
