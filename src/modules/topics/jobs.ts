@@ -217,6 +217,11 @@ const jobs = {
       (entry) => entry.topic_id === topMeritedTopic.author_uid,
     );
 
+    const topMeritedTopicSum = topMeritedTopic.merits.reduce(
+      (accum, curr) => accum + curr.amount,
+      0,
+    );
+
     // const topMeritedUser = topics
     //   .reduce((users, topic) => {
     //     if (!topic.author_uid) return users;
@@ -278,7 +283,9 @@ const jobs = {
 
       - Tópico com mais merits: [url=https://bitcointalk.org/index.php?topic=${
         topMeritedTopic.topic_id
-      }.0]${topMeritedTopic.title}[/url] por ${topMeritedTopicEntry?.author}
+      }.0]${topMeritedTopic.title}[/url] (${topMeritedTopicSum}) por ${
+      topMeritedTopicEntry?.author
+    }
 
     `;
 
