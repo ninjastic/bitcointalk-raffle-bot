@@ -46,9 +46,16 @@ async function main() {
     await checkForMatches();
     await checkForJobs();
 
+    let isCheckingForJobs = false;
+    let isCheckingForMatches = false;
+
     setInterval(async () => {
       try {
-        await checkForMatches();
+        if (!isCheckingForMatches) {
+          isCheckingForMatches = true;
+          await checkForMatches();
+          isCheckingForMatches = false;
+        }
       } catch (error) {
         log('checkForMatches FAILED:', error);
       }
@@ -56,7 +63,11 @@ async function main() {
 
     setInterval(async () => {
       try {
-        await checkForJobs();
+        if (!isCheckingForJobs) {
+          isCheckingForJobs = true;
+          await checkForJobs();
+          isCheckingForJobs = false;
+        }
       } catch (error) {
         log('checkForJobs FAILED:', error);
       }
