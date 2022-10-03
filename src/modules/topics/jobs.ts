@@ -214,7 +214,7 @@ const jobs = {
     });
 
     const topMeritedTopicEntry = entries.find(
-      (entry) => entry.topic_id === topMeritedTopic.author_uid,
+      (entry) => entry.topic_id === topMeritedTopic.topic_id,
     );
 
     const topMeritedTopicSum = topMeritedTopic.merits.reduce(

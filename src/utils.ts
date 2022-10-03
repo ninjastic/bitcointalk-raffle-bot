@@ -5,6 +5,7 @@ import { load } from 'cheerio';
 import crypto from 'crypto-js';
 import fs from 'fs';
 import path from 'path';
+import iconv from 'iconv-lite';
 
 import dayjs from './services/dayjs';
 import log from './logger';
@@ -25,7 +26,9 @@ export const settings: ISettings = JSON.parse(
   fs.readFileSync(path.join(__dirname, '..', 'settings.json'), 'utf-8'),
 );
 
-export const api = axios.create();
+export const api = axios.create({
+  responseType: 'arraybuffer',
+});
 
 const MAX_REQUESTS_COUNT = 1;
 const INTERVAL_MS = 1000 * 1;
@@ -48,6 +51,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     PENDING_REQUESTS = Math.max(0, PENDING_REQUESTS - 1);
+    const utf8String = iconv.decode(response.data, 'ISO-8859-1');
+    response.data = utf8String;
+
     return Promise.resolve(response);
   },
   (error) => {
