@@ -36,7 +36,7 @@ const commands = [
           ?.match(/vencedores:\s+?(\d+)/i)
           ?.at(1);
         const deadlineMatch = codeSettings
-          ?.match(/deadline:\s+?(\d{4}\/\d{2}\/\d{2})/i)
+          ?.match(/deadline:\s+?(\d{4}\/\d{2}\/\d{2}(\s\d{2}:\d{2})?)/i)
           ?.at(1);
 
         if (!numberOfWinnersMatch || !deadlineMatch) {
