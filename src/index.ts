@@ -54,10 +54,11 @@ async function main() {
         if (!isCheckingForMatches) {
           isCheckingForMatches = true;
           await checkForMatches();
-          isCheckingForMatches = false;
         }
       } catch (error) {
         log('checkForMatches FAILED:', error);
+      } finally {
+        isCheckingForMatches = false;
       }
     }, 1000 * 30);
 
@@ -66,10 +67,11 @@ async function main() {
         if (!isCheckingForJobs) {
           isCheckingForJobs = true;
           await checkForJobs();
-          isCheckingForJobs = false;
         }
       } catch (error) {
         log('checkForJobs FAILED:', error);
+      } finally {
+        isCheckingForJobs = false;
       }
     }, 1000 * 60 * 1);
   }
