@@ -15,6 +15,7 @@ export interface IGame {
   overview_post_id: number;
   winner_post_id: number;
   tickets_drawn: number[];
+  created_at: string;
 }
 
 const gameSchema = new Schema<IGame>(

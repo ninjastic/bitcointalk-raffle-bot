@@ -6,9 +6,9 @@ import { Game, IGame } from '../../models/Game';
 import { Entry, IEntry } from '../../models/Entry';
 
 export const generateContent = async (game: IGame) => {
-  const { deadline, number_winners, topic_id, post_id, seed } = game;
+  const { game_id, deadline, number_winners, topic_id, post_id, seed } = game;
 
-  const entries = await Entry.find({ game_id: game.game_id });
+  const entries = await Entry.find({ game_id });
 
   const entryGroups = entries.reduce((groups, entry) => {
     const authorGroupIndex = groups.findIndex(

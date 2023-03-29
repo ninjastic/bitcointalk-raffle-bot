@@ -104,7 +104,7 @@ const commands = [
       await Promise.allSettled(
         regexMatches.map(async (postEntry) => {
           const postEntryMatchRegex =
-            /\+\s?entrada .*bitcointalk\.org\/index\.php\?topic=(\d+)/i;
+            /\+\s?entrada (?:https:\/\/)?(?:www\.)?bitcointalk\.org\/index\.php\?topic=(\d+)/i;
           const postEntryMatch = postEntry.match(postEntryMatchRegex);
 
           if (postEntryMatch && game?.game_id) {
@@ -119,7 +119,8 @@ const commands = [
 
               if (
                 topicData.author_uid === post.author_uid &&
-                dayjs(game.deadline).isAfter(topicData.date)
+                dayjs(game.deadline).isAfter(topicData.date) &&
+                dayjs(topicData.date).isAfter(dayjs(game.created_at))
               ) {
                 const nextEntryId = (await Entry.count()) + 1;
                 const entry = new Entry({
