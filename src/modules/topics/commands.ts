@@ -99,46 +99,47 @@ const commands = [
         return Promise.resolve();
       }
 
+      const addedTopicsSet = new Set();
       let shouldUpdate = false;
 
-      await Promise.allSettled(
-        regexMatches.map(async (postEntry) => {
-          const postEntryMatchRegex =
-            /\+\s?entrada (?:https:\/\/)?(?:www\.)?bitcointalk\.org\/index\.php\?topic=(\d+)/i;
-          const postEntryMatch = postEntry.match(postEntryMatchRegex);
+      for await (const regexMatch of regexMatches) {
+        const postEntryMatchRegex =
+          /\+\s?entrada (?:https:\/\/)?(?:www\.)?bitcointalk\.org\/index\.php\?topic=(\d+)/i;
+        const postEntryMatch = regexMatch.match(postEntryMatchRegex);
 
-          if (postEntryMatch && game?.game_id) {
-            const [, topicId] = postEntryMatch;
+        if (postEntryMatch && game?.game_id) {
+          const [, topicId] = postEntryMatch;
 
-            const entryExists = await Entry.findOne({
-              topic_id: Number(topicId),
-            });
+          const entryExists = await Entry.findOne({
+            topic_id: Number(topicId),
+          });
 
-            if (!entryExists) {
-              const topicData = await getTopicData(Number(topicId));
+          if (!entryExists && !addedTopicsSet.has(topicId)) {
+            const topicData = await getTopicData(Number(topicId));
 
-              if (
-                topicData.author_uid === post.author_uid &&
-                dayjs(game.deadline).isAfter(topicData.date) &&
-                dayjs(topicData.date).isAfter(dayjs(game.created_at))
-              ) {
-                const nextEntryId = (await Entry.count()) + 1;
-                const entry = new Entry({
-                  entry_id: nextEntryId,
-                  post_id: post.post_id,
-                  topic_id: Number(topicId),
-                  author: post.author,
-                  author_uid: post.author_uid,
-                  game_id: game.game_id,
-                });
+            if (
+              topicData.author_uid === post.author_uid &&
+              dayjs(game.deadline).isAfter(topicData.date) &&
+              dayjs(topicData.date).isAfter(dayjs(game.created_at))
+            ) {
+              const nextEntryId = (await Entry.count()) + 1;
+              const entry = new Entry({
+                entry_id: nextEntryId,
+                post_id: post.post_id,
+                topic_id: Number(topicId),
+                author: post.author,
+                author_uid: post.author_uid,
+                game_id: game.game_id,
+              });
 
-                await entry.save();
-                shouldUpdate = true;
-              }
+              addedTopicsSet.add(entry.topic_id);
+
+              await entry.save();
+              shouldUpdate = true;
             }
           }
-        }),
-      );
+        }
+      }
 
       if (shouldUpdate) {
         await refreshPostContent(game.game_id);

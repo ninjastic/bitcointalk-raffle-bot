@@ -1,11 +1,13 @@
 import { stripIndents } from 'common-tags';
 import cryptojs from 'crypto-js';
+import dayjs from '../../services/dayjs';
 import { Game } from '../../models/Game';
 import { Entry, IEntry } from '../../models/Entry';
 import {
   createPost,
   getBlockHash,
   getCurrentBlock,
+  getTimeUntilDeadline,
   getTopicData,
   ITopicData,
 } from '../../utils';
@@ -13,6 +15,39 @@ import log from '../../logger';
 import Queue from '../../services/queue';
 
 const jobs = {
+  raffleDeadlineAlertStage: async (gameId: number) => {
+    const game = await Game.findOne({ game_id: gameId });
+    if (!game) {
+      throw new Error('Game not found');
+    }
+
+    if (game.deadline_alert_post_id) {
+      throw new Error('Game already has deadline alert post');
+    }
+
+    log('raffleDeadlineAlertStage raffle', gameId);
+
+    const message = stripIndents`
+      Menos de 24 horas restantes para o fim do período de novas entradas. Aproveite para terminar seus últimos tópicos!
+
+      [list]
+      [li]Data final: ${dayjs
+        .tz(game.deadline, 'UTC')
+        .format('DD/MM/YYYY HH:mm:ss z')}[/li]
+      [/list]
+    `;
+
+    const newPostId = await createPost({
+      topic: game.topic_id,
+      subject: 'Sorteio fechado',
+      message,
+    });
+
+    if (newPostId) {
+      game.deadline_alert_post_id = newPostId;
+      await game.save();
+    }
+  },
   raffleSecondStage: async (gameId: number) => {
     const game = await Game.findOne({ game_id: gameId });
     if (!game) {
@@ -283,7 +318,7 @@ const jobs = {
 
       - Tópico com mais merits: [url=https://bitcointalk.org/index.php?topic=${
         topMeritedTopic.topic_id
-      }.0]${topMeritedTopic.title}[/url] (${topMeritedTopicSum}) por ${
+      }.0]${topMeritedTopic.title}[/url] [${topMeritedTopicSum}] por ${
       topMeritedTopicEntry?.author
     }
 
@@ -305,6 +340,14 @@ const jobs = {
     const game = await Game.findOne({ game_id: gameId });
     if (!game) {
       throw new Error('Game not found');
+    }
+
+    if (
+      !game.finished &&
+      !game.deadline_alert_post_id &&
+      getTimeUntilDeadline(game.deadline) <= 1440
+    ) {
+      await jobs.raffleDeadlineAlertStage(game.game_id);
     }
 
     if (game.finished && !game.overview_post_id) {

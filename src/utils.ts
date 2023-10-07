@@ -165,6 +165,7 @@ export const createPost = async ({
     message: encodeStr(message),
     sc: code,
     goback: 1,
+    ns: 'NS',
   };
 
   const bodyFormData = new FormData();
@@ -234,6 +235,7 @@ export const editPost = async ({
     message: encodeStr(message),
     goback: 1,
     sc: code,
+    ns: 'NS',
   };
 
   const bodyFormData = new FormData();
@@ -364,4 +366,10 @@ export const getBlockHash = async (height: number) => {
     `https://mempool.space/api/block-height/${height}`,
   );
   return response.data;
+};
+
+export const getTimeUntilDeadline = (deadline: Date): number => {
+  const currentDate = dayjs();
+  const deadlineDate = dayjs(deadline);
+  return deadlineDate.diff(currentDate);
 };

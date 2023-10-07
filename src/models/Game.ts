@@ -13,6 +13,7 @@ export interface IGame {
   finished: boolean;
   block_height: number;
   overview_post_id: number;
+  deadline_alert_post_id: number;
   winner_post_id: number;
   tickets_drawn: number[];
   created_at: string;
@@ -30,6 +31,7 @@ const gameSchema = new Schema<IGame>(
     seed: { type: String, required: true },
     block_height: { type: Number, required: false },
     overview_post_id: { type: Number, required: false },
+    deadline_alert_post_id: { type: Number, required: false },
     winner_post_id: { type: Number, required: false },
     tickets_drawn: { type: [Number], required: false },
   },
