@@ -371,5 +371,5 @@ export const getBlockHash = async (height: number) => {
 export const getTimeUntilDeadline = (deadline: Date): number => {
   const currentDate = dayjs();
   const deadlineDate = dayjs(deadline);
-  return deadlineDate.diff(currentDate);
+  return deadlineDate.diff(currentDate, 'minutes');
 };
